@@ -1,0 +1,7 @@
+medium
+simulation
+
+the key of this is to understand the problem correctly.
+several things that i mistook at first:
+1. queue is examined first before taking a look at the new arrived tasks. or, the tasks are put into queue first.
+2. at timeline f, those tasks with deadline f won't get punished.

@@ -1,3 +1,4 @@
-medium
+hard
 geometry
 mathematics
+accuracy

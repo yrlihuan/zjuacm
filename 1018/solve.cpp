@@ -13,6 +13,11 @@ using namespace std;
 // 0.0000001 and 0.000000001 will not pass the test
 #define ACCURACY 0.00000001
 
+// for poj
+#ifndef M_PI
+#define M_PI 3.1415926535897932384
+#endif
+
 typedef struct PointType
 {
   long double x;
