@@ -9,7 +9,7 @@
 using namespace std;
 
 #define MAX_LEN 21
-#define MAX_LINE 80
+#define MAX_LINE 81
 
 inline bool is_letter(char a)
 {
@@ -19,7 +19,7 @@ inline bool is_letter(char a)
 char *dic;
 vector<char*> lwords[MAX_LEN];
 
-int find_next_match(char *searching, int prefix, vector<char*> words, int search_start)
+int find_next_match(char *searching, int prefix, vector<char*> words, int search_start, char *mapping_r)
 {
   int search_end = words.size();
   if (prefix != 0) {
@@ -85,7 +85,7 @@ int find_next_match(char *searching, int prefix, vector<char*> words, int search
 
     bool valid = true;
     while (*p) {
-      if (*p == *word || *p == '*') {
+      if (*p == *word || (*p == '*' && mapping_r[*word] == '*')) {
         ++p;
         ++word;
       }
@@ -112,7 +112,7 @@ void solve_case()
   while (true) {
     buf = new char[MAX_LINE];
     gets(buf);
-    if (!is_letter(buf[0])) {
+    if (!buf[0]) {
       if (!first_line)
         break;
     }
@@ -150,7 +150,7 @@ void solve_case()
     list<char*>::iterator it;
     list<char*>::iterator next;
     int next_score = 0;
-    for (it = unqueued.begin(); it != unqueued.end(); ++it) {
+    for (it = unqueued.begin(); it != unqueued.end(); ) {
       bool duplicate = false;
       for (unsigned int i = 0; i < queue.size(); ++i) {
         if (0 == strcmp(queue[i], *it)) {
@@ -160,8 +160,7 @@ void solve_case()
       }
 
       if (duplicate) {
-        unqueued.erase(it);
-        --it;
+        it = unqueued.erase(it);
         continue;
       }
 
@@ -169,13 +168,13 @@ void solve_case()
       int len = 0;
       char *p = *it;
       bool is_prefix = true;
-      while (*p != '\0') {
-        int ind = *p;
-        if (is_prefix && mapping[ind]) {
-          score += 1000000;
+      while (*p) {
+        if (is_prefix && mapping[(int)*p]) {
+          score += 10000;
         }
-        else {
+        else if (mapping[(int)*p]) {
           is_prefix = false;
+          score += 5000;
         }
 
         ++len;
@@ -188,11 +187,17 @@ void solve_case()
         next = it;
         next_score = score;
       }
+
+      ++it;
+    }
+
+    if (next_score == 0) {
+      continue;
     }
 
     int prefix = 0;
     char *p = *next;
-    while (*p != '\0') {
+    while (*p) {
       if (mapping[(int)*p]) {
         prefix++;
       }
@@ -204,7 +209,7 @@ void solve_case()
     }
 
     p = *next;
-    while (*p != '\0') {
+    while (*p) {
       mapping[(int)*p] = 'A';
 
       ++p;
@@ -215,16 +220,20 @@ void solve_case()
     unqueued.erase(next);
   }
 
-  //vector<char*>::iterator it;
-  //for (it = queue.begin(); it < queue.end(); ++it) {
-  //  cout << *it << endl;
-  //}
-  //cout << endl;
+  // vector<char*>::iterator it;
+  // for (it = queue.begin(); it < queue.end(); ++it) {
+  //   cout << *it << endl;
+  // }
+  // cout << endl;
 
   memset(mapping, '*', 128);
   mapping['Z'+1] = '\0';
+
+  char mapping_r[128];
+  memset(mapping_r, '*', 128);
+  mapping_r['Z'+1] = '\0';
+
   char result[27];
-  strcpy(result, mapping+'A');
 
   int n_words = queue.size();
 
@@ -246,42 +255,26 @@ void solve_case()
   while (true) {
     // If we reach a solution
     if (pos == n_words) {
-      int missing = 0;
-      char missed;
-      for (int i = 'A'; i <= 'Z'; ++i) {
-        char c = mapping[i];
-        if (c != '*') {
-          result[c-'A'] = i;
-        }
-        else {
-          missing++;
-          missed = i;
-        }
-      }
-
-      // if (missing == 1) {
-      //   for (int i = 0; i < 26; ++i) {
-      //     if (result[i] == '*') {
-      //       result[i] = missed;
-      //     }
-      //   }
-      // }
+      strcpy(result, mapping_r+'A');
 
       num_success++;
       if (num_success > 1) {
-        cout << "#More than one solution#" << endl;
-        return;
+        break;
       }
       else {
         pos--;
         int mapped_cnt = mapped_pos[pos];
         for (int i = 0; i < mapped_cnt; ++i) {
           char en = mapped_seq[--mapped_letters];
+          char de = mapping[(int)en];
           mapping[(int)en] = '*';
+          mapping_r[(int)de] = '*';
         }
 
         search_start = search_history[pos] + 1;
         searching = search_words[pos];
+
+        continue;
       }
     }
 
@@ -305,11 +298,41 @@ void solve_case()
       len = strlen(searching);
     }
 
-    int ind = find_next_match(searching, prefix, lwords[len], search_start);
+    int ind = find_next_match(searching, prefix, lwords[len], search_start, mapping_r);
     // cout << searching << endl;
     // cout << prefix << endl;
     // cout << search_start << endl;
     // cout << ind << endl;
+    // cout << mapping_r + 'A' << endl;
+    if (ind >= 0) {
+      char *decoded = lwords[len][ind];
+      char mapping[26] = {0};
+      char mapping_r[26] = {0};
+
+      char *en = word;
+      char *de = decoded;
+
+      bool bad_attempt = false;
+      while (*en) {
+        if (!mapping[*en-'A'] && !mapping_r[*de-'A']) {
+          mapping[*en-'A'] = *de;
+          mapping_r[*de-'A'] = *en;
+        }
+        else if (mapping[*en-'A'] != *de || mapping_r[*de-'A'] != *en) {
+          bad_attempt = true;
+          break;
+        }
+
+        ++en;
+        ++de;
+      }
+
+      if (bad_attempt) {
+        search_start = ind + 1;
+        continue;
+      }
+    }
+
     if (ind >= 0) {
       char *decoded = lwords[len][ind];
       // cout << decoded << endl;
@@ -320,6 +343,7 @@ void solve_case()
 
         if (mapping[(int)en] == '*') {
           mapping[(int)en] = de;
+          mapping_r[(int)de] = en;
           mapped_seq[mapped_letters++] = en;
           mapped_cnt++;
         }
@@ -341,7 +365,9 @@ void solve_case()
       int mapped_cnt = mapped_pos[pos];
       for (int i = 0; i < mapped_cnt; ++i) {
         char en = mapped_seq[--mapped_letters];
+        char de = mapping[(int)en];
         mapping[(int)en] = '*';
+        mapping_r[(int)de] = '*';
       }
 
       search_start = search_history[pos] + 1;
@@ -356,7 +382,7 @@ void solve_case()
     cout << result << endl;
   }
   else {
-    cout << '?' << endl;
+    cout << "#More than one solution#" << endl;
   }
 
   // cout << endl;
@@ -366,7 +392,7 @@ int main()
 {
   int n;
   int i;
-  dic = new char[400000];
+  dic = new char[1024 * 1024];
 
   for (i = 0; i < MAX_LEN; ++i) {
     lwords[i].reserve(2560);
