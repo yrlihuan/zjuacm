@@ -16,6 +16,14 @@ inline bool is_letter(char a)
   return a>='A' && a<='Z';
 }
 
+bool strComp(char *a, char *b) {
+  return strcmp(a, b) < 0;
+}
+
+bool strEqual(char *a, char *b) {
+  return !strcmp(a, b);
+}
+
 char *dic;
 vector<char*> lwords[MAX_LEN];
 
@@ -109,36 +117,92 @@ void solve_case()
   bool first_line = true;
 
   vector<char*> encrypted;
-  while (true) {
-    buf = new char[MAX_LINE];
-    gets(buf);
-    if (!buf[0]) {
-      if (!first_line)
-        break;
+  //while (true) {
+  //  buf = new char[MAX_LINE];
+  //  gets(buf);
+  //  if (!buf[0]) {
+  //    if (!first_line)
+  //      break;
+  //  }
+  //  else {
+  //    first_line = false;
+
+  //    char *p = buf;
+  //    char *q = p;
+  //    while (true) {
+  //      bool reach_end = *p == '\0';
+  //      if (*p == ' ' || *p == '\0') {
+  //        *p = '\0';
+  //        if (p - q > 0) {
+  //          encrypted.push_back(q);
+  //        }
+
+  //        q = p + 1;
+
+  //        if (reach_end)
+  //          break;
+  //      }
+
+  //      ++p;
+  //    }
+  //  }
+  //}
+  bool lastIsNewLine = false;
+  int wordPosition = 0;
+  char tempCharacter;
+  while(scanf("%c",&tempCharacter), tempCharacter < 'A' || tempCharacter > 'Z');
+
+  buf = new char[MAX_LINE];
+  while(true)
+  {
+    if(tempCharacter >= 'A' && tempCharacter <= 'Z')
+    {
+      lastIsNewLine = false;
+      buf[wordPosition++] = tempCharacter;
     }
-    else {
-      first_line = false;
-
-      char *p = buf;
-      char *q = p;
-      while (true) {
-        bool reach_end = *p == '\0';
-        if (*p == ' ' || *p == '\0') {
-          *p = '\0';
-          if (p - q > 0) {
-            encrypted.push_back(q);
-          }
-
-          q = p + 1;
-
-          if (reach_end)
-            break;
-        }
-
-        ++p;
+    else if(tempCharacter == ' ')
+    {
+      lastIsNewLine = false;
+      if(wordPosition)
+      {
+        encrypted.push_back(buf);
+        buf[wordPosition] = 0;
+        buf = new char[MAX_LINE];
+        wordPosition = 0;
       }
     }
+    else if(tempCharacter == '\n')
+    {
+      if(wordPosition)
+      {
+        encrypted.push_back(buf);
+        buf[wordPosition] = 0;
+        buf = new char[MAX_LINE];
+        wordPosition = 0;
+      }
+      if(lastIsNewLine)
+      {
+        break;
+      }
+      else
+      {
+        lastIsNewLine = true;
+      }
+    }
+    if(scanf("%c",&tempCharacter) == EOF)
+    {
+      if(wordPosition)
+      {
+        encrypted.push_back(buf);
+        buf[wordPosition] = 0;
+      }
+
+      break;
+    }
   }
+
+  sort(encrypted.begin(), encrypted.end(), strComp);
+  unique(encrypted.begin(), encrypted.end(), strEqual);
 
   vector<char*> queue;
   vector<int> prefixes;
@@ -146,24 +210,17 @@ void solve_case()
   char mapping[128];
   memset(mapping, 0, 128);
 
+  //list<char*>::iterator it0;
+  //for (it0 = unqueued.begin(); it0 != unqueued.end(); ++it0) {
+  //  cout << *it0 << endl;
+  //}
+  //cout << endl;
+
   while (unqueued.size()) {
     list<char*>::iterator it;
     list<char*>::iterator next;
     int next_score = 0;
-    for (it = unqueued.begin(); it != unqueued.end(); ) {
-      bool duplicate = false;
-      for (unsigned int i = 0; i < queue.size(); ++i) {
-        if (0 == strcmp(queue[i], *it)) {
-          duplicate = true;
-          break;
-        }
-      }
-
-      if (duplicate) {
-        it = unqueued.erase(it);
-        continue;
-      }
-
+    for (it = unqueued.begin(); it != unqueued.end(); ++it) {
       int score = 0;
       int len = 0;
       char *p = *it;
@@ -187,12 +244,10 @@ void solve_case()
         next = it;
         next_score = score;
       }
-
-      ++it;
     }
 
     if (next_score == 0) {
-      continue;
+      break;
     }
 
     int prefix = 0;
@@ -220,11 +275,11 @@ void solve_case()
     unqueued.erase(next);
   }
 
-  // vector<char*>::iterator it;
-  // for (it = queue.begin(); it < queue.end(); ++it) {
-  //   cout << *it << endl;
-  // }
-  // cout << endl;
+  //vector<char*>::iterator it;
+  //for (it = queue.begin(); it < queue.end(); ++it) {
+  //  cout << *it << endl;
+  //}
+  //cout << endl;
 
   memset(mapping, '*', 128);
   mapping['Z'+1] = '\0';
@@ -392,7 +447,7 @@ int main()
 {
   int n;
   int i;
-  dic = new char[1024 * 1024];
+  dic = new char[1024 * 400];
 
   for (i = 0; i < MAX_LEN; ++i) {
     lwords[i].reserve(2560);
