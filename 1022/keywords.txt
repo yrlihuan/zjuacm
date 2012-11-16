@@ -1,0 +1,4 @@
+medium
+accuracy
+dp
+state machine
