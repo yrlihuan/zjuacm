@@ -1,0 +1,4 @@
+hard
+linear equations
+gauss elimination
+mathematics
