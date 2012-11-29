@@ -69,6 +69,11 @@ iterP get_pipe(int ind, vecP &pipes)
 
 int solve_case(int target, int th, vecP &pipes)
 {
+  iterP target_pipe = pipes.begin() + target;
+  if (th > target_pipe->top + target_pipe->h || th <= target_pipe->top) {
+    return INVALID_VOL;
+  }
+
   // 1st, build connection graph
   vector<iterP> seq;
   iterP next = pipes.end();
@@ -123,64 +128,52 @@ int solve_case(int target, int th, vecP &pipes)
 
   // run...
   int cost = 0;
-  iterP target_pipe = pipes.begin() + target;
 
-  if (th > target_pipe->top + target_pipe->h || th <= target_pipe->top) {
-    return INVALID_VOL;
-  }
+  iterP it = target_pipe;
+  iterP pend = pipes.end();
+  int level = th;
 
-  while (cost < INVALID_VOL && target_pipe->level > th) {
-    seq[0]->level--;
-    bool exceeded = false;
-    for (int i = 1; i < seq.size(); ++i) {
-      iterP p = seq[i];
-      iterP parent = p->parent;
+  while (it != pend) {
+    it->level = level;
 
-      int level = calc_level(*p, parent->level);
-
-      if (level != p->level) {
-        if (p->ind == target_pipe->ind && level < th) {
-          p->level = th;
-          exceeded = true;
-        }
-        else {
-          p->level = level;
-        }
-      }
+    if (level > it->src_h) {
+      level = it->src_h;
     }
 
-    cost = 0;
-    for (int i = 0; i < seq.size(); ++i) {
-      iterP p = seq[i];
-      iterP pp = p;
+    it = it->parent;
+  }
 
-      bool targets_child = false;
-      while (pp->parent != pipes.end()) {
-        if (pp->parent == target_pipe) {
-          targets_child = true;
-          break;
-        }
-
-        pp = pp->parent;
-      }
-
-      if (p->level > p->top + p->h) {
-        cost += 0;
-      }
-      else if (p->level > p->top || (exceeded && !targets_child)) {
-        cost += p->top + p->h - p->level;
-      }
-      else {
-        cost += INVALID_VOL;
-      }
+  for (int i = 0; i < seq.size(); ++i) {
+    iterP p = seq[i];
+    if (p->level <= p->top + p->h) {
+      continue;
     }
 
-    //cout << "------------" << endl;
-    //for (int i = 0; i < seq.size(); ++i) {
-    //  cout << seq[i]->level << endl;
-    //}
-    //cout << cost << endl;
+    iterP parent = p->parent;
+    int level = calc_level(*p, parent->level);
+
+    p->level = level;
   }
+
+  cost = 0;
+  for (int i = 0; i < seq.size(); ++i) {
+    iterP p = seq[i];
+    if (p->level > p->top + p->h) {
+      cost += 0;
+    }
+    else if (p->level > p->top) {
+      cost += p->top + p->h - p->level;
+    }
+    else {
+      cost += INVALID_VOL;
+    }
+  }
+
+  //cout << "------------" << endl;
+  //for (int i = 0; i < seq.size(); ++i) {
+  //  cout << seq[i]->level << endl;
+  //}
+  //cout << cost << endl;
 
   return cost;
 }
