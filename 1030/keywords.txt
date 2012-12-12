@@ -1,0 +1,5 @@
+medium
+search
+geometry
+line crossing
+polygon
