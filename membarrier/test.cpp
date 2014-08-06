@@ -8,7 +8,7 @@
 #include <random>
 
 // a test according to http://en.wikipedia.org/wiki/Memory_barrier
-void f1(int &f, int &x)
+void f1(volatile int &f, int &x)
 {
   while (f == 0)
     ;
@@ -16,7 +16,7 @@ void f1(int &f, int &x)
   std::cout << x << std::endl;
 }
 
-void f2(int &f, int &x)
+void f2(volatile int &f, int &x)
 {
   std::default_random_engine generator;
   generator.seed(std::time(0));
@@ -33,7 +33,7 @@ void f2(int &f, int &x)
 
 int main()
 {
-  int f = 0;
+  volatile int f = 0;
   int x = 0;
   std::thread t1(f1, std::ref(f), std::ref(x));
   std::thread t2(f2, std::ref(f), std::ref(x));
